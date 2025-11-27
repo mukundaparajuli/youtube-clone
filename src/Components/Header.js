@@ -35,6 +35,17 @@ const Header = () => {
     return commonSearches.slice(0, 5);
   };
 
+  const buildSuggestionUrl = (query, callbackName) => {
+    const params = new URLSearchParams({
+      client: 'youtube',
+      hl: 'en',
+      ds: 'yt',
+      q: query,
+      callback: callbackName
+    });
+    return `${YOUTUBE_SUGESSTION_API}?${params.toString()}`;
+  };
+
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) {
@@ -74,7 +85,8 @@ const Header = () => {
         };
 
         const script = document.createElement('script');
-        script.src = YOUTUBE_SUGESSTION_API + encodeURIComponent(searchQuery) + '&callback=' + callbackName;
+        // FIXED: Use proper URL construction with parameters
+        script.src = buildSuggestionUrl(searchQuery, callbackName);
         script.onerror = () => {
           cleanup();
           const fallbackSuggestions = getFallbackSuggestions(searchQuery);
@@ -97,90 +109,128 @@ const Header = () => {
           dispatch(cacheResults({ [searchQuery]: fallbackSuggestions }));
         }, 3000);
       } catch (err) {
-        setSuggestions([]);
+        console.error('Error fetching suggestions:', err);
+        const fallbackSuggestions = getFallbackSuggestions(searchQuery);
+        setSuggestions(fallbackSuggestions);
+        if (fallbackSuggestions.length > 0) {
+          setShowSuggestion(true);
+        }
       }
     }, 200);
 
     return () => clearTimeout(timer);
   }, [searchQuery, searchCache, dispatch]);
 
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion);
+    setShowSuggestion(false);
+    setSelectedIndex(-1);
+    navigate(`/search?q=${encodeURIComponent(suggestion)}`);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setShowSuggestion(false);
+      setSelectedIndex(-1);
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestion || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % suggestions.length);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          handleSuggestionClick(suggestions[selectedIndex]);
+        } else {
+          handleSearchSubmit(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestion(false);
+        setSelectedIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
-    <div className="flex justify-between h-16 bg-white w-screen  items-center px-4">
+    <div className="flex justify-between h-16 bg-white w-screen items-center px-4 sticky top-0 z-40 shadow-sm">
       <div className="flex items-center">
-        <FaBars className="h-5 w-5 cursor-pointer ml-4" onClick={() => toggleMenuHandler()} />
-        <a href="/">
+        <FaBars
+          className="h-5 w-5 cursor-pointer ml-4 hover:bg-gray-100 rounded-full p-1"
+          onClick={toggleMenuHandler}
+          aria-label="Toggle menu"
+        />
+        <a href="/" className="flex items-center">
           <FaYoutube className="h-8 w-20 text-red-600 mr-6" />
         </a>
       </div>
-      <div className="flex-1 px-4 relative">
+
+      <div className="flex-1 px-4 relative max-w-2xl">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (searchQuery.trim()) {
-              navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-            }
-          }}
-          className="flex h-14 justify-center w-[100%]"
+          onSubmit={handleSearchSubmit}
+          className="flex justify-center w-full"
           role="search"
           aria-label="Site search"
         >
-          <div className="relative flex">
+          <div className="relative flex w-full max-w-xl">
             <input
               type="text"
               name="q"
               placeholder="Search"
-              aria-label="Search"
-              className="w-4/5 md:w-3/5 border-solid border-gray-500 border-2 border-r-0 flex self-center rounded-l-full h-10 p-4"
+              aria-label="Search YouTube"
+              className="w-full border border-gray-300 border-r-0 flex self-center rounded-l-full h-10 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestion(true)}
               onBlur={() => setTimeout(() => setShowSuggestion(false), 200)}
-              onKeyDown={(e) => {
-                if (!showSuggestion) return;
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setSelectedIndex((prev) => (prev + 1) % suggestions.length);
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setSelectedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
-                } else if (e.key === 'Enter' && selectedIndex >= 0) {
-                  setSearchQuery(suggestions[selectedIndex]);
-                  setShowSuggestion(false);
-                  setSelectedIndex(-1);
-                } else if (e.key === 'Escape') {
-                  setShowSuggestion(false);
-                  setSelectedIndex(-1);
-                }
-              }}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
             />
             <button
               type="submit"
-              aria-label="Search button"
-              className="border-solid border-gray-500 border-2 self-center  rounded-r-full h-10 p-1  bg-gray-300 w-16 flex items-center justify-center"
+              aria-label="Search"
+              className="border border-gray-300 border-l-0 self-center rounded-r-full h-10 px-6 bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors"
             >
-              <Search className="h-6 w-6" />
+              <Search className="h-5 w-5 text-gray-600" />
             </button>
+
             {showSuggestion && suggestions.length > 0 && (
               <div
-                className="absolute top-full left-0 mt-1 w-[140%] md:w-[80%] bg-white h-auto border-2 border-gray-500 rounded-xl shadow-sm z-50"
+                className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
                 role="listbox"
                 aria-label="Search suggestions"
               >
-                <ul className="w-[100%]">
+                <ul className="py-1">
                   {suggestions.map((suggestion, index) => (
                     <li
-                      className={`py-1 shadow-sm p-2 w-[100%] hover:bg-gray-200 cursor-pointer ${index === selectedIndex ? 'bg-gray-200' : ''}`}
-                      key={suggestion}
+                      className={`px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors ${index === selectedIndex ? 'bg-gray-100' : ''
+                        } ${index === 0 ? 'rounded-t-lg' : ''} ${index === suggestions.length - 1 ? 'rounded-b-lg' : ''
+                        }`}
+                      key={suggestion + index}
                       role="option"
                       aria-selected={index === selectedIndex}
-                      tabIndex={0}
-                      onClick={() => {
-                        setSearchQuery(suggestion);
-                        setShowSuggestion(false);
-                        setSelectedIndex(-1);
-                      }}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent input blur
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      onMouseEnter={() => setSelectedIndex(index)}
                     >
-                      {suggestion}
+                      <div className="flex items-center">
+                        <Search className="h-4 w-4 text-gray-400 mr-3" />
+                        <span className="text-sm">{suggestion}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -189,9 +239,20 @@ const Header = () => {
           </div>
         </form>
       </div>
+
       <div className="flex items-center gap-4 mr-4">
-        <IoMdNotificationsOutline className="h-6 w-6 cursor-pointer hover:bg-gray-100 rounded-full" />
-        <FaUserCircle className="h-6 w-6 cursor-pointer" />
+        <button
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="Notifications"
+        >
+          <IoMdNotificationsOutline className="h-6 w-6" />
+        </button>
+        <button
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="User profile"
+        >
+          <FaUserCircle className="h-6 w-6" />
+        </button>
       </div>
     </div>
   );
