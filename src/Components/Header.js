@@ -36,14 +36,8 @@ const Header = () => {
   };
 
   const buildSuggestionUrl = (query, callbackName) => {
-    const params = new URLSearchParams({
-      client: 'youtube',
-      hl: 'en',
-      ds: 'yt',
-      q: query,
-      callback: callbackName
-    });
-    return `${YOUTUBE_SUGESSTION_API}?${params.toString()}`;
+    const encodedQuery = encodeURIComponent(query);
+    return `${YOUTUBE_SUGESSTION_API}?client=firefox&ds=yt&q=${encodedQuery}&callback=${callbackName}`;
   };
 
   useEffect(() => {
@@ -76,7 +70,24 @@ const Header = () => {
 
         window[callbackName] = (data) => {
           cleanup();
-          const sugg = Array.isArray(data) && data[1] ? data[1] : [];
+          let sugg = [];
+
+          if (Array.isArray(data)) {
+            if (Array.isArray(data[1])) {
+              sugg = data[1];
+            } else if (Array.isArray(data[0])) {
+              sugg = data[0];
+            } else {
+              sugg = Array.isArray(data) ? data.filter(item => typeof item === 'string') : [];
+            }
+          } else if (typeof data === 'object' && data !== null) {
+            sugg = data.suggestions || data.results || [];
+          }
+
+          if (!Array.isArray(sugg) || sugg.length === 0) {
+            sugg = getFallbackSuggestions(searchQuery);
+          }
+
           setSuggestions(sugg);
           if (sugg.length > 0) {
             setShowSuggestion(true);
@@ -109,7 +120,6 @@ const Header = () => {
           dispatch(cacheResults({ [searchQuery]: fallbackSuggestions }));
         }, 3000);
       } catch (err) {
-        console.error('Error fetching suggestions:', err);
         const fallbackSuggestions = getFallbackSuggestions(searchQuery);
         setSuggestions(fallbackSuggestions);
         if (fallbackSuggestions.length > 0) {
@@ -170,7 +180,7 @@ const Header = () => {
     <div className="flex justify-between h-16 bg-white w-screen items-center px-4 sticky top-0 z-40 shadow-sm">
       <div className="flex items-center">
         <FaBars
-          className="h-5 w-5 cursor-pointer ml-4 hover:bg-gray-100 rounded-full p-1"
+          className="h-7 w-7 cursor-pointer ml-3 hover:bg-gray-100 rounded-full p-1"
           onClick={toggleMenuHandler}
           aria-label="Toggle menu"
         />
