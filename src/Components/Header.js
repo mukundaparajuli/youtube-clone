@@ -192,7 +192,7 @@ const Header = () => {
               name="q"
               placeholder="Search"
               aria-label="Search YouTube"
-              className="w-full border border-gray-300 border-r-0 flex self-center rounded-l-full h-10 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full border border-gray-300 border-r-0 flex self-center rounded-l-full h-10 px-4 focus:outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestion(true)}
