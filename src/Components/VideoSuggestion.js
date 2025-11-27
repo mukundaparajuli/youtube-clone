@@ -11,10 +11,8 @@ const VideoSuggestion = () => {
       const json = await data.json();
       setVideos(json.items);
     } catch (err) {
-      console.log("Error occured while fetching videos.");
     }
   };
-
 
   useEffect(() => {
     getVideos();
@@ -23,11 +21,18 @@ const VideoSuggestion = () => {
 
   return (
     <div>
-      {videos.map((video, id) => (
-        <Link to={"/watch?v=" + video.id} key={video.id}>
-          <SuggestionVideoCard info={video} />
-        </Link>
-      ))}
+      {videos.map((video) => {
+        const finalId =
+          video.id?.videoId ||
+          (typeof video.id === "string" ? video.id : video.id?.toString?.()) ||
+          video.snippet?.resourceId?.videoId ||
+          "";
+        return (
+          <Link to={"/watch?v=" + finalId} key={finalId}>
+            <SuggestionVideoCard info={video} />
+          </Link>
+        );
+      })}
     </div>
   );
 };

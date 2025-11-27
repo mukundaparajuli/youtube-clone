@@ -9,8 +9,6 @@ export const LiveChat = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     const i = setInterval(() => {
-      // API Poling
-      console.log("api call")
       dispatch(
         addMessage({
           name: generateRandomName(),

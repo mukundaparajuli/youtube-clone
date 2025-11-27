@@ -1,7 +1,15 @@
-const GOOGLE_API_KEY = "AIzaSyB-Q4AHucljMa_U1ItJ0h5FI9zUR9JT2Uw";
+import { API_ENDPOINTS, API_CONFIG, API_PARAMS, EMBED_CONFIG } from "../constants";
+
 export const OFFSET_LIVE_CHAT = 14;
-export const YOUTUBE_VIDEOS_APIS =
-  "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=NP&key=" +
-  GOOGLE_API_KEY;
-export const YOUTUBE_SUGESSTION_API =
-  "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=";
+
+export const YOUTUBE_VIDEOS_APIS = `${API_ENDPOINTS.VIDEOS}?part=${API_PARAMS.VIDEO_PARTS}&chart=${API_PARAMS.CHART}&maxResults=${API_PARAMS.MAX_RESULTS.VIDEOS}&regionCode=${API_PARAMS.REGION_CODE}&key=${API_CONFIG.API_KEY}`;
+
+export const YOUTUBE_VIDEO_BY_ID_API = `${API_ENDPOINTS.VIDEOS}?part=${API_PARAMS.VIDEO_PARTS}&key=${API_CONFIG.API_KEY}`;
+
+export const YOUTUBE_SEARCH_API = `${API_ENDPOINTS.SEARCH}?part=${API_PARAMS.SEARCH_PARTS}&maxResults=${API_PARAMS.MAX_RESULTS.SEARCH}&type=${API_PARAMS.TYPE}&key=${API_CONFIG.API_KEY}`;
+
+export const YOUTUBE_SUGESSTION_API = API_CONFIG.SUGGESTION_BASE;
+
+export const YOUTUBE_COMMENT_API = `${API_ENDPOINTS.COMMENT_THREADS}?part=${API_PARAMS.COMMENT_PARTS}&maxResults=${API_PARAMS.MAX_RESULTS.COMMENTS}&key=${API_CONFIG.API_KEY}`;
+
+export const EMBED_URL = EMBED_CONFIG.BASE_URL;

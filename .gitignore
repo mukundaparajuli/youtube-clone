@@ -18,6 +18,9 @@
 .env.test.local
 .env.production.local
 
+# local env (do NOT commit your real API keys)
+.env
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 
 const MainBody = () => {
   return (
-    <div className="overflow-auto w-[1800px] h-[100vh] text-gray-700">
+    <div className="flex-1 h-[100vh] text-gray-700 overflow-y-auto">
       <Outlet />
     </div>
   );

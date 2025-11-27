@@ -3,7 +3,7 @@ import { YOUTUBE_VIDEOS_APIS } from "../config/Config";
 import { VideoCard, AdVideo } from "./VideoCard";
 import { Link } from "react-router-dom";
 import ButtonList from "./ButtonList";
-import { Shimmer } from "./Shimmer";
+import { VideoFeedShimmer } from "./Shimmer";
 const VideoContainer = () => {
   const [videos, setVideos] = useState([]);
   useEffect(() => {
@@ -13,13 +13,12 @@ const VideoContainer = () => {
     const data = await fetch(YOUTUBE_VIDEOS_APIS);
     const json = await data.json();
     setVideos(json.items);
-    console.log(json.items);
   };
   return (
     <div>
       <ButtonList />
       {videos.length === 0 ? (
-        <Shimmer />
+        <VideoFeedShimmer />
       ) : (
         <div className="flex flex-wrap justify-evenly scroll-auto">
           {<AdVideo info={videos[0]} />}

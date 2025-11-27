@@ -18,7 +18,7 @@ const ButtonList = () => {
     "React",
   ];
   return (
-    <div className="flex scroll:none overflow-auto">
+    <div className="flex overflow-auto no-scrollbar">
       {buttonLists.map((item) => (
         <Buttons name={item} key={item} />
       ))}
