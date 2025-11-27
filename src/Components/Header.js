@@ -21,41 +21,81 @@ const Header = () => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchCache = useSelector((store) => store.search);
 
+  const getFallbackSuggestions = (query) => {
+    const commonSearches = [
+      `${query} tutorial`,
+      `${query} 2024`,
+      `${query} explained`,
+      `${query} vs`,
+      `${query} tips`,
+      `${query} guide`,
+      `${query} review`,
+      `${query} news`
+    ];
+    return commonSearches.slice(0, 5);
+  };
+
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (!searchQuery) {
+      if (!searchQuery || searchQuery.length < 2) {
         setSuggestions([]);
         return;
       }
 
       if (searchCache[searchQuery]) {
         setSuggestions(searchCache[searchQuery]);
+        if (searchCache[searchQuery].length > 0) {
+          setShowSuggestion(true);
+        }
         return;
       }
 
       try {
         const callbackName = 'youtubeSuggestionsCallback' + Date.now();
+        let timeoutId;
+
+        const cleanup = () => {
+          if (timeoutId) clearTimeout(timeoutId);
+          if (window[callbackName]) delete window[callbackName];
+          const script = document.querySelector(`script[src*="${callbackName}"]`);
+          if (script && document.head.contains(script)) {
+            document.head.removeChild(script);
+          }
+        };
+
         window[callbackName] = (data) => {
+          cleanup();
           const sugg = Array.isArray(data) && data[1] ? data[1] : [];
           setSuggestions(sugg);
+          if (sugg.length > 0) {
+            setShowSuggestion(true);
+          }
           dispatch(cacheResults({ [searchQuery]: sugg }));
-          delete window[callbackName];
         };
 
         const script = document.createElement('script');
         script.src = YOUTUBE_SUGESSTION_API + encodeURIComponent(searchQuery) + '&callback=' + callbackName;
         script.onerror = () => {
-          setSuggestions([]);
-          delete window[callbackName];
+          cleanup();
+          const fallbackSuggestions = getFallbackSuggestions(searchQuery);
+          setSuggestions(fallbackSuggestions);
+          if (fallbackSuggestions.length > 0) {
+            setShowSuggestion(true);
+          }
+          dispatch(cacheResults({ [searchQuery]: fallbackSuggestions }));
         };
+
         document.head.appendChild(script);
 
-        setTimeout(() => {
-          if (document.head.contains(script)) {
-            document.head.removeChild(script);
-            delete window[callbackName];
+        timeoutId = setTimeout(() => {
+          cleanup();
+          const fallbackSuggestions = getFallbackSuggestions(searchQuery);
+          setSuggestions(fallbackSuggestions);
+          if (fallbackSuggestions.length > 0) {
+            setShowSuggestion(true);
           }
-        }, 5000);
+          dispatch(cacheResults({ [searchQuery]: fallbackSuggestions }));
+        }, 3000);
       } catch (err) {
         setSuggestions([]);
       }
@@ -120,7 +160,7 @@ const Header = () => {
             >
               <Search className="h-6 w-6" />
             </button>
-            {showSuggestion && (
+            {showSuggestion && suggestions.length > 0 && (
               <div
                 className="absolute top-full left-0 mt-1 w-[140%] md:w-[80%] bg-white h-auto border-2 border-gray-500 rounded-xl shadow-sm z-50"
                 role="listbox"
